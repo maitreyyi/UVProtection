@@ -3,43 +3,16 @@ import express from "express";
 import axios from "axios";
 
 const app = express();
-const port = 3001;
-//const uvapiKey = "openuv-ciq4zrllx5r7af-io";
-let lat = 0;
-let lon = 0;
+const port = 3000;
+const apiKey = "openuv-ciq4zrllx5r7af-io";
 
-//axios.defaults.headers.common["x-access-token"] = apiKey;
-//axios.defaults.headers.post['Content-Type'] = 'application/json';
+axios.defaults.headers.common["x-access-token"] = apiKey;
+axios.defaults.headers.post['Content-Type'] = 'application/json';
 
 app.use(bodyParser.urlencoded({extended: true}));
 
-app.get("/", async (req,res)=> {
-    /*
-    try {
-        const result = await axios.get("https://api.openuv.io/api/v1/uv", {
-            params: {
-                lat : lat,
-                lng : lon,
-            }
-        });
-        const data = result.data.result;
-
-        res.render("index.ejs", {
-            lat: lat,
-            lon: lon,
-            uv: JSON.stringify(data.uv),
-            uv_max: JSON.stringify(data.uv_max),
-            ozone: JSON.stringify(data.ozone),
-            sunrise: JSON.stringify(data.sunrise),
-            sunset: JSON.stringify(data.sunset),
-        });
-        
-
-    } catch(error) {
-        res.status(404).send("Error: " + error.message);
-        console.log(error)
-    }
-    */
+app.get("/", async (req,res)=> {   
+   res.render("index.ejs");
 
 });
 
@@ -48,15 +21,28 @@ app.get("/about", (req,res) => {
 });
 
 app.post("/submit", async (req,res) => {
+    const address = req.body["location"];
     try{
         const result = await axios.get("https://nominatim.openstreetmap.org/search?q=" + address + "&format=json");
-        lat = result.data[0].lat; 
-        lon = result.data[0].lon;
+        //console.log(lat, lon);
+        const info = await axios.get("https://api.openuv.io/api/v1/uv", {
+            params: {
+                lat : result.data[0].lat,
+                lng : result.data[0].lon,
+            }
+        });
+        const data = info.data.result;
+
         res.render("index.ejs", {
-            lat: lat,
-            lon: lon,
+            address: address,
+            uv: JSON.stringify(data.uv),
+            uv_max: JSON.stringify(data.uv_max),
+            ozone: JSON.stringify(data.ozone),
+            sunrise: JSON.stringify(data.sunrise),
+            sunset: JSON.stringify(data.sunset),
         });
     } catch(error) {
+        res.status(404).send("Invalid Address, try again!");
         console.log(error);
     }
 });
